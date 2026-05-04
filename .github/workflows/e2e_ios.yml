@@ -157,7 +157,7 @@ jobs:
     # so we need to rebuild them
     - name: Rebuild native modules
       if: steps.cache.outputs.cache-hit == 'true'
-      run: bitrise-build-cache react-native run npm rebuild
+      run: bitrise-build-cache react-native run -- npm rebuild
 
     - name: Install Dependencies
       if: steps.cache.outputs.cache-hit != 'true'
@@ -190,7 +190,7 @@ jobs:
       continue-on-error: true
       id: first_test_run
       run: |
-        bitrise-build-cache react-native run npm run e2e:test:ios
+        bitrise-build-cache react-native run -- npm run e2e:test:ios
 
     - name: Run e2e test (retry, with logs)
       # if first_test_run fails, but we `continue-on-error`, failure() is false. so we need to check it's specific _outcome_

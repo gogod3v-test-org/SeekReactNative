@@ -19,18 +19,18 @@ jobs:
     - name: Check out Git repository
       uses: actions/checkout@v6
 
-    - name: 'Bitrise Build Cache for React Native'
+    - name: 'Bitrise Build Cache Activate for RN'
       env:
         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        BITRISE_BUILD_CACHE_WORKSPACE_ID: 322a005426441b60
+        BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
       run: |
         #!/usr/bin/env bash
         set -euxo pipefail
-        
+
         # download Bitrise Build Cache CLI
         curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
-        
-        # run the CLI to enable Bitrise build cache for Gradle
+
+        # run the CLI to enable Bitrise build cache for React Native
         /tmp/bin/bitrise-build-cache activate react-native
 
     - name: Install Node.js, NPM and Yarn
@@ -53,7 +53,7 @@ jobs:
         npm install
         npm run add-example-model
     
-    - run: bitrise-build-cache react-native run npx react-native build-android
+    - run: bitrise-build-cache react-native run -- npx react-native build-android
 
     # - run: npm test
 

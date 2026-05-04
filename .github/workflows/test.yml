@@ -5,36 +5,55 @@ name: Tests
 on:
   pull_request:
   push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  pre_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-          cancel_others: true
   test:
     name: Run Tests
-    needs: pre_build
     runs-on: ubuntu-latest
     steps:
     - name: Check out Git repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
-    - name: Setup repo
-      run: cp config.example.js config.js
-      shell: bash
+    - name: 'Bitrise Build Cache for React Native'
+      env:
+        BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        BITRISE_BUILD_CACHE_WORKSPACE_ID: 322a005426441b60
+      run: |
+        #!/usr/bin/env bash
+        set -euxo pipefail
+        
+        # download Bitrise Build Cache CLI
+        curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+        
+        # run the CLI to enable Bitrise build cache for Gradle
+        /tmp/bin/bitrise-build-cache activate react-native
 
     - name: Install Node.js, NPM and Yarn
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: 22
 
-    - name: Install deps
-      run: npm install
-
-    - run: npm run lint
+    - name: Setup repo
+      shell: bash
+      run: |
+        #!/usr/bin/env bash
+        set -euxo pipefail
+        cp config.example.js config.js
+        cat > ./android/app/src/main/res/values/config.xml <<'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="gmaps_api_key">xxx</string>
+        </resources>
+        EOF
+        npm install
+        npm run add-example-model
+    
+    - run: bitrise-build-cache react-native run npx react-native build-android
 
     # - run: npm test
 
